@@ -1,0 +1,21 @@
+name: Verify
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check atlas tests scripts
+      - run: python -m pytest -q
+      - run: python scripts/evaluate.py
+      - name: Check synthetic evaluation gates
+        run: python -c "import json; r=json.load(open('docs/evaluation.json')); assert r['false_positive_runs'] == 0; assert r['fault_runs_with_expected_incident_count'] == r['fault_runs']"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-evaluation
+          path: docs/evaluation.json

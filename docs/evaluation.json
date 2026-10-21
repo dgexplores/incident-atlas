@@ -1,0 +1,381 @@
+{
+  "dataset": "deterministically generated synthetic telemetry",
+  "evaluation_seed_range": [
+    1000,
+    1019
+  ],
+  "showcase_seed": 42,
+  "healthy_runs": 20,
+  "false_positive_runs": 0,
+  "fault_runs": 60,
+  "fault_runs_with_expected_incident_count": 60,
+  "healthy_run_false_positive_rate": 0.0,
+  "fault_run_incident_count_accuracy": 1.0,
+  "limitations": [
+    "Known synthetic fault families; not unseen-fault generalization.",
+    "Incident count agreement does not establish causal diagnosis correctness.",
+    "No production data, LLM evaluation, MTTR improvement or deployment uptime measurement."
+  ],
+  "details": [
+    {
+      "seed": 1000,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1000,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1000,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1001,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1001,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1001,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1002,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1002,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1002,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1003,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1003,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1003,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1004,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1004,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1004,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1005,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1005,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1005,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1006,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1006,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1006,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1007,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1007,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1007,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1008,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1008,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1008,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1009,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1009,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1009,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1010,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1010,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1010,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1011,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1011,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1011,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1012,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1012,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1012,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1013,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1013,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1013,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1014,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1014,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1014,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1015,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1015,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1015,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1016,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1016,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1016,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1017,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1017,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1017,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1018,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1018,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1018,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    },
+    {
+      "seed": 1019,
+      "scenario": "database-pressure",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1019,
+      "scenario": "memory-growth",
+      "expected_incidents": 1,
+      "actual_incidents": 1
+    },
+    {
+      "seed": 1019,
+      "scenario": "independent-faults",
+      "expected_incidents": 2,
+      "actual_incidents": 2
+    }
+  ]
+}
