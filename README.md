@@ -1,166 +1,82 @@
 # Incident Atlas
 
-**Live demo:** [dg-incident-atlas.onrender.com](https://dg-incident-atlas.onrender.com) · [API reference](https://dg-incident-atlas.onrender.com/docs)
+Investigate container resource changes with measured telemetry, statistical detection, runbook context and optional model-assisted hypotheses.
 
-**Follow an incident from scattered signals to an evidence-backed next check.**
+An original, AI-assisted Python application inspired by the operational problem addressed by [Signal0ne](https://devpost.com/software/signal0ne). No upstream source or awards are claimed. This v2 rebuild is local; earlier similarly named public demos do not verify this version.
 
-Incident Atlas is a Python application for investigating reproducible service
-incidents. It detects sustained changes in telemetry, groups related findings
-using service dependencies, and gives an operator hypotheses with the exact
-observations that support them. A reviewer can record notes and change an
-incident's state without executing any infrastructure action.
+## Why this exists
 
-**For a reviewer:** open the app, replay **Two independent faults**, and select
-each incident. The database/checkout fault stays separate from catalog CPU
-pressure even though they overlap in time. Inspect the baseline and peaks,
-then save a review. Replay **Healthy baseline** to see the quiet state.
+A one-point CPU threshold can miss a meaningful change below its limit and alert on a harmless isolated spike. Incident Atlas freezes an opening baseline, requires consecutive deviations, groups related findings only when a dependency path is supplied, and keeps the investigation separate from remediation.
 
-## What problem does it solve?
+## Working capabilities
 
-An incident often arrives as several alerts across connected services.
-Investigators need to distinguish a related chain from an unrelated fault,
-inspect the evidence, and record what they checked. This project makes those
-steps visible in one browser workspace.
-
-The public showcase uses **synthetic telemetry**, not a production connection.
-All four scenarios execute the actual detection and correlation code. The
-hypotheses are deterministic, rule-based suggestions; no LLM is silently
-simulated and no generated probability is presented as confidence.
+- Local `docker stats` collector for one to eight named running containers: CPU and memory only, bounded subprocess timeout, no shell execution, no socket mounted into the web application.
+- Browser upload of a measured JSON capture, with stream completeness, duplicate, finite-value, service-count, body-size and dependency validation.
+- Median/MAD detector with three consecutive breaches. For measured CPU, no universal 85% cap is applied: Docker percentages can exceed 100 on multiple cores.
+- Dependency-aware incident grouping, exact finding IDs, local runbook matching and session-isolated SQLite review history.
+- Optional OpenAI-compatible model call with operator-token authentication, bounded request/response settings and validation that returned evidence/runbook IDs exist. No autonomous commands or remediation.
+- Four labelled synthetic exercises remain available without Docker or a provider.
 
 ## Run locally
 
-Python 3.12 or newer is required. No model key, Docker socket, database server,
-external CDN or paid API is needed.
+Python 3.12+ and uv:
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-uvicorn atlas.app:app --host 127.0.0.1 --port 8104
+```sh
+uv venv .venv
+uv pip install --python .venv/bin/python -r requirements-dev.txt
+.venv/bin/python -m uvicorn atlas.app:app --host 127.0.0.1 --port 8051
 ```
 
-Open [the investigation workspace](http://localhost:8104/) or
-[the local API reference](http://localhost:8104/docs). The source ships every
-frontend asset. API reference content is generated from `/openapi.json` using
-local JavaScript, so documentation does not break when an external CDN fails.
+Open http://127.0.0.1:8051. `/docs` displays the application API reference; `/openapi.json` is its schema. No account, Docker access or provider is required for the synthetic exercises.
 
-```bash
-python -m pytest -q
-ruff check atlas tests scripts
-python scripts/evaluate.py
+## Collect actual container measurements
+
+With Docker already running and a representative healthy workload:
+
+```sh
+.venv/bin/python -m atlas.collector my-container --samples 70 --baseline 50 --interval 5 --output telemetry.json
 ```
 
-Docker alternative:
+Upload `telemetry.json` in the interface. The first 50 samples establish the frozen baseline; only later points are candidates for detection. Sample indices are not minutes. The collector reports its measured average cadence because Docker stats may take longer than the requested interval. Capture a healthy baseline before introducing a fault. Stopped/missing selected containers cause collection to fail rather than silently produce an incomplete capture.
 
-```bash
-docker build -t incident-atlas .
-docker run --rm -p 8104:8104 incident-atlas
+The web application accepts user-supplied measurements; it cannot authenticate that an uploaded file was actually collected by Docker. Non-CPU fixed resource limits retain their documented detector semantics. No latency or error-rate measurements are invented from CPU/memory stats.
+
+## Optional model assistance
+
+Configure these in the process environment; do not commit secrets:
+
+```text
+ATLAS_LLM_BASE_URL=https://your-provider.example/v1
+ATLAS_LLM_MODEL=your-model
+ATLAS_LLM_API_KEY=your-secret
+ATLAS_OPERATOR_TOKEN=a-long-random-operator-token
 ```
 
-## Architecture and decisions
+A compatible local model server may use HTTP on localhost. Provider compatibility and quality require separate evaluation. Select an incident, review the runbooks, enter the operator token and explicitly request a hypothesis. This sends metric finding summaries and local runbooks to the configured provider; it does not send Docker logs. The token is cleared after submission and is not stored in browser storage.
 
-```mermaid
-flowchart LR
-    A[Synthetic metric streams] --> B[Fixed opening baseline]
-    B --> C[Median/MAD and operational limits]
-    C --> D[Three consecutive breaches]
-    D --> E[Time and dependency correlation]
-    E --> F[Evidence-linked hypotheses]
-    F --> G[Browser investigation and review]
-    G --> H[(SQLite records and review events)]
+Returned citation existence is validated, but citation correctness, reasoning quality and causal diagnosis are not proved. Raw log ingestion/RAG and trace ingestion are not implemented. Keep the service bound locally unless proper deployment authentication, quotas and TLS are added.
+
+## Verification and measurable comparison
+
+```sh
+.venv/bin/python -m pytest -q
+.venv/bin/python scripts/evaluate_telemetry.py
 ```
 
-| Component | Responsibility | Why this design |
-|---|---|---|
-| `atlas/domain.py` | Telemetry fixtures, statistical detection, graph traversal, incident grouping, hypothesis rules | Pure functions make scenario behavior reproducible and independently testable |
-| `atlas/store.py` | Parameterized SQL, transactions, session-scoped records, event history and bounded retention | SQLite keeps a single-process demonstration straightforward to run |
-| `atlas/app.py` | Validated HTTP requests, session cookie, origin checks, routes and security headers | Transport and business logic have separate boundaries |
-| `static/` | Responsive queue, latency chart, evidence desk, filters and review form | Evidence and state are explicit, including loading/error/healthy states |
-| `scripts/evaluate.py` | Repeatable synthetic scenario evaluation | Published results are generated rather than entered by hand |
+The generated evaluation covers 40 seeds across healthy data, isolated spikes, moderate sustained shifts and large shifts: 160 cases. The sustained robust detector reports TP80/FP0/TN80/FN0; a one-point 85% CPU threshold reports TP40/FP40/TN40/FN40. Mean alert eligibility occurs two samples after fault onset because three breaches are required. Full record: [telemetry evaluation](docs/telemetry-evaluation.json).
 
-**Detection:** each service/metric uses the first 50 observations to establish
-a median and median absolute deviation. A robust z-score above 6 or a fixed
-operational limit marks an observation; three consecutive marks become a
-finding. The baseline is frozen before faults begin at minute 60. Median/MAD
-is less sensitive to isolated baseline outliers than a mean/standard deviation.
+This demonstrates an advantage against that simple baseline on those constructed fixtures only. It is not a production false-alarm rate, live-container validation or comparison with Signal0ne. Docker daemon access timed out on the build host, so collector subprocess behavior is tested with recorded-shaped responses; an actual Docker capture remains unverified. Model calls are boundary-tested with a mocked HTTP provider, not scored for real-model quality.
 
-**Grouping:** findings form connected components when their windows overlap
-within five minutes and their services have a dependency path. Reachability
-uses a visited set, so cycles cannot cause an infinite loop. Time coincidence
-alone cannot join the independent catalog branch to checkout.
+## Architecture and interview discussion
 
-**Diagnosis:** rules recognize patterns such as pool pressure followed by
-upstream degradation. Each hypothesis lists finding IDs and a next check.
-The application deliberately says **may**, because temporal correlation and
-the dependency graph do not prove a root cause.
+```text
+Local Docker CLI → bounded JSON capture → validated import → frozen-baseline detector
+                                                        → dependency grouping
+                                                        → evidence + runbooks
+                                                        → optional model hypothesis
+                                                        → human review / SQLite
+```
 
-## Results and what they mean
+Be prepared to explain median versus mean, MAD scale floors, why baseline leakage matters, CPU core semantics, time-window grouping, session isolation, provider output validation and why correlation is not causality. Changes are real code rather than a rename of an upstream project; AI assistance does not establish personal understanding, which should be demonstrated by modifying and debugging the system.
 
-See [the generated evaluation report](docs/evaluation.json). It evaluates 20
-healthy runs and 60 fault runs with seeds **1000–1019**, separate from the
-showcased seed 42. The report measures healthy-run false positives and whether
-each known scenario yields its expected incident count. It does **not** measure
-unseen fault detection, causal accuracy, business savings, uptime or MTTR.
-
-Tests cover baseline noise, isolated spikes, reversed input order, independent
-fault separation, hypothesis evidence references, database persistence,
-cross-session access denial, retention, invalid inputs and frontend/API assets.
-GitHub Actions reruns tests, lint and the synthetic evaluation and retains its
-report as an artifact. Local checks do not establish hosted CI success.
-
-## How does this relate to Signal0ne?
-
-Signal0ne's Docker incident workflow was the architectural reference: gather
-context, surface an issue, inspect it and suggest an investigation direction.
-This is a **new implementation**, with no copied upstream source or assets.
-It uses FastAPI/SQLite and a browser evidence desk instead of reproducing the
-Docker extension, Go backend, Angular UI or external LLM agent.
-
-[Reference analysis](docs/reference-analysis.md) records inspected commits,
-source paths, observations, inferences and unknowns. The original project's
-hackathon award belongs to its original authors and is not an award for Atlas.
-
-Portfolio owner: **Deepak Gangwar**. Implementation and documentation were
-developed with AI assistance. The repository history and tests document the
-work; they do not imply independent authorship of Signal0ne or production use.
-
-## Deployment and limitations
-
-`render.yaml` defines a free Python web service; it must be connected to the
-GitHub repository before deployment. A live URL should be added only after
-health, API, static asset and review-flow checks pass against that deployment.
-
-- `ATLAS_DB_PATH` defaults to `data/atlas.db` locally. Render uses `/tmp/atlas.db`:
-  **state is ephemeral across service restarts or redeploys**. Use a persistent
-  volume and backups for durable operation; multi-instance use needs a server DB.
-- Browser sessions use an opaque HttpOnly SameSite cookie. This is demonstration
-  isolation, **not user authentication or enterprise authorization**.
-- Retention keeps at most 12 exercises per session and 300 globally. Deleting
-  older exercises also deletes their incident review history.
-- Four known fault scenarios and their rules are intentionally bounded. The
-  system is not connected to Docker, Prometheus, live logs or a model provider.
-- Statistical anomaly detection is implemented. Deep learning, autonomous
-  remediation, a production LLM diagnosis service and causal inference are not.
-
-## Interview discussion
-
-**What would you improve next?** Add a validated Prometheus ingestion adapter,
-timestamp alignment and missing-data handling; evaluate on independently
-labelled real incident traces; add authentication and durable storage before
-allowing real tenant data.
-
-**Why not let an LLM fix the incident?** A plausible explanation is not proof,
-and an incorrect action can worsen an outage. This version makes observation,
-hypothesis and human review separate steps.
-
-**What skills can be discussed from this implementation?** Python, OOP,
-FastAPI/REST, Pydantic validation, SQL transactions, graph traversal, statistical
-data processing, testing, Git/CI, troubleshooting and technical documentation.
-Claims about live cloud operations or measured production impact need separate
-evidence.
-
-MIT licensed; see [LICENSE](LICENSE).
-
-## Original project study
-
-See the [upstream project study](docs/upstream-study.md) for the original architecture, authorship, setup requirements and limitations. It describes a separate upstream reference, not this repository’s deployed application.
+See [source study](docs/reference-analysis.md) for the original reference investigation. Existing [upstream-study notes](docs/upstream-study.md) describe the original, not this implementation.

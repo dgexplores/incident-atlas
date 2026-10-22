@@ -74,20 +74,21 @@ def generate(scenario: str, seed: int = 42) -> list[Observation]:
     return rows
 
 
-def detect(rows: list[Observation]) -> list[dict]:
+def detect(rows: list[Observation], training_points: int = TRAINING_POINTS, operational_limits: dict | None = None) -> list[dict]:
     """Collapse consecutive anomalous observations into one metric finding.
 
     Require three consecutive breaches to reduce single-spike noise. A robust
     median/MAD score and a fixed domain limit can independently trigger it.
     This is a statistical detector, not a trained deep-learning model.
     """
+    operational_limits = {key: value[3] for key, value in METRICS.items()} if operational_limits is None else operational_limits
     streams = defaultdict(list)
     for row in rows:
         streams[(row.service, row.metric)].append(row)
     findings = []
     for (service, metric), stream in sorted(streams.items()):
         stream.sort(key=lambda point: point.minute)
-        baseline = [row.value for row in stream if row.minute < TRAINING_POINTS]
+        baseline = [row.value for row in stream if row.minute < training_points]
         if len(baseline) < 20:
             continue
         median = statistics.median(baseline)
@@ -97,7 +98,7 @@ def detect(rows: list[Observation]) -> list[dict]:
         groups = []
         for row in stream:
             z_score = (row.value - median) / scale
-            breached = row.minute >= TRAINING_POINTS and (z_score > Z_THRESHOLD or row.value > METRICS[metric][3])
+            breached = row.minute >= training_points and (z_score > Z_THRESHOLD or row.value > operational_limits.get(metric, math.inf))
             if breached:
                 if active and row.minute != active[-1].minute + 1:
                     groups.append(active)
@@ -124,8 +125,9 @@ def detect(rows: list[Observation]) -> list[dict]:
     return sorted(findings, key=lambda item: (item["start_minute"], item["id"]))
 
 
-def related(left: str, right: str) -> bool:
+def related(left: str, right: str, dependencies: dict | None = None) -> bool:
     """Dependency reachability; independent branches must not merge by time alone."""
+    dependencies = DEPENDENCIES if dependencies is None else dependencies
     def reachable(start, target):
         pending, seen = [start], set()
         while pending:
@@ -134,12 +136,12 @@ def related(left: str, right: str) -> bool:
                 return True
             if item not in seen:
                 seen.add(item)
-                pending.extend(DEPENDENCIES.get(item, []))
+                pending.extend(dependencies.get(item, []))
         return False
     return reachable(left, right) or reachable(right, left)
 
 
-def correlate(findings: list[dict]) -> list[dict]:
+def correlate(findings: list[dict], dependencies: dict | None = None) -> list[dict]:
     """Connected components over overlapping windows and dependency reachability."""
     groups = []
     remaining = list(findings)
@@ -148,7 +150,7 @@ def correlate(findings: list[dict]) -> list[dict]:
         while pending:
             item = pending.pop()
             component.append(item)
-            connected = [other for other in remaining if related(item["service"], other["service"]) and
+            connected = [other for other in remaining if related(item["service"], other["service"], dependencies) and
                          item["start_minute"] <= other["end_minute"] + 5 and other["start_minute"] <= item["end_minute"] + 5]
             for other in connected:
                 remaining.remove(other)
@@ -162,9 +164,9 @@ def summarize(evidence: list[dict]) -> dict:
     hypotheses = []
     if ("orders-db", "pool_pct") in keys:
         hypotheses.append({"title": "Database connection pressure may be propagating upstream", "basis": [item["id"] for item in evidence if item["metric"] in {"pool_pct", "latency_ms", "error_pct"}], "strength": "supported pattern", "next_check": "Inspect active connections, long-running queries and application pool settings. Check deployment changes before assigning a cause."})
-    for service in SERVICES:
+    for service in sorted({item["service"] for item in evidence}):
         if (service, "memory_pct") in keys:
-            hypotheses.append({"title": f"{service} memory growth may be contributing to latency", "basis": [item["id"] for item in evidence if item["service"] == service], "strength": "plausible", "next_check": "Compare heap/GC behavior and request volume. Growth alone does not prove a memory leak."})
+            hypotheses.append({"title": f"{service} memory pressure warrants investigation", "basis": [item["id"] for item in evidence if item["service"] == service], "strength": "plausible", "next_check": "Compare heap/GC behavior and request volume. Growth alone does not prove a memory leak."})
         if (service, "cpu_pct") in keys:
             hypotheses.append({"title": f"{service} CPU pressure may be limiting throughput", "basis": [item["id"] for item in evidence if item["service"] == service], "strength": "plausible", "next_check": "Compare workload and CPU profiles. Rule out an expected traffic spike."})
     if not hypotheses:

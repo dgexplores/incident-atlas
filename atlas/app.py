@@ -7,12 +7,16 @@ from typing import Literal
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
+import httpx
+from pydantic import ValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from atlas.domain import SCENARIOS, analyze
 from atlas.store import Store
+from atlas.telemetry import TelemetryBatch, analyze_telemetry
+from atlas.triage import context_for, explain
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,8 +27,8 @@ async def lifespan(application):
     yield
 
 
-app = FastAPI(title="Incident Atlas", version="1.0.0", lifespan=lifespan, docs_url=None, redoc_url=None,
-              description="Synthetic incident exercises: statistical anomalies, dependency correlation and evidence-linked hypotheses. No automatic remediation or live infrastructure connection.")
+app = FastAPI(title="Incident Atlas", version="2.0.0", lifespan=lifespan, docs_url=None, redoc_url=None,
+              description="Synthetic incident exercises: statistical anomalies, dependency correlation and evidence-linked hypotheses. Measured telemetry imports, optional model-assisted triage, and synthetic exercises. No automatic remediation.")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -35,8 +39,17 @@ async def session_boundary(request: Request, call_next):
         if origin and urlsplit(origin).netloc != request.headers.get("host"):
             return JSONResponse({"detail": "Cross-origin writes are not accepted."}, status_code=403)
         length = request.headers.get("content-length", "0")
-        if not length.isdigit() or int(length) > 16_384:
+        body_limit = 1_048_576 if request.url.path == "/api/telemetry" else 16_384
+        if not length.isdigit() or int(length) > body_limit:
             return JSONResponse({"detail": "Request is too large."}, status_code=413)
+        chunks = []
+        body_size = 0
+        async for chunk in request.stream():
+            body_size += len(chunk)
+            if body_size > body_limit:
+                return JSONResponse({"detail": "Request is too large."}, status_code=413)
+            chunks.append(chunk)
+        request._body = b"".join(chunks)
     session = request.cookies.get("atlas_session", "")
     valid_session = len(session) == 48 and all(char in "0123456789abcdef" for char in session)
     request.state.session = session if valid_session else secrets.token_hex(24)
@@ -74,7 +87,7 @@ def api_reference():
 
 @app.get("/healthz")
 def health():
-    return {"status": "ok", "mode": "synthetic-exercises", "external_actions": False}
+    return {"status": "ok", "mode": "exercises-and-measured-imports", "external_actions": False, "llm_configured": all(os.getenv(key) for key in ("ATLAS_LLM_MODEL", "ATLAS_OPERATOR_TOKEN", "ATLAS_LLM_BASE_URL", "ATLAS_LLM_API_KEY"))}
 
 
 @app.get("/api/scenarios")
@@ -110,3 +123,35 @@ def review(incident_id: str, payload: Review, request: Request):
     if result is None:
         raise HTTPException(404, "Incident not found in this browser's exercise.")
     return result
+
+
+@app.post("/api/telemetry", status_code=201)
+def telemetry(payload: TelemetryBatch, request: Request):
+    """Analyze bounded user-uploaded observations without Docker socket access."""
+    return app.state.store.create_run(request.state.session, analyze_telemetry(payload))
+
+
+@app.get("/api/incidents/{incident_id}/context")
+def incident_context(incident_id: str, request: Request):
+    result = app.state.store.incident(request.state.session, incident_id)
+    if result is None:
+        raise HTTPException(404, "Incident not found in this browser session.")
+    return context_for(result)
+
+
+@app.post("/api/incidents/{incident_id}/explain")
+def explain_incident(incident_id: str, request: Request):
+    token = os.getenv("ATLAS_OPERATOR_TOKEN", "")
+    if not token:
+        raise HTTPException(503, "Model assistance is disabled until an operator token and provider are configured.")
+    if not secrets.compare_digest(request.headers.get("x-atlas-token", ""), token):
+        raise HTTPException(401, "A valid operator token is required for model calls.")
+    result = app.state.store.incident(request.state.session, incident_id)
+    if result is None:
+        raise HTTPException(404, "Incident not found in this browser session.")
+    try:
+        return explain(result)
+    except (ValueError, ValidationError, KeyError, IndexError, TypeError):
+        raise HTTPException(502, "Model configuration or evidence validation failed. No hypothesis accepted.") from None
+    except httpx.HTTPError:
+        raise HTTPException(502, "Model provider unavailable. Statistical evidence remains available.") from None

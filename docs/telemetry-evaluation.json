@@ -1,0 +1,27 @@
+{
+  "cases": 160,
+  "seeds": 40,
+  "scenarios": [
+    "healthy",
+    "single_spike",
+    "moderate_shift",
+    "large_shift"
+  ],
+  "opening_baseline_samples": 20,
+  "counts": {
+    "sustained_robust": {
+      "tp": 80,
+      "fp": 0,
+      "tn": 80,
+      "fn": 0
+    },
+    "fixed_85_threshold": {
+      "tp": 40,
+      "fp": 40,
+      "tn": 40,
+      "fn": 40
+    }
+  },
+  "mean_detection_delay_samples": 2,
+  "limitations": "Generated CPU fixtures, not captured Docker data or independent validation. Moderate shifts are labelled anomalous by construction. Comparison is only against a one-point 85% threshold, not Signal0ne or any original winner."
+}
