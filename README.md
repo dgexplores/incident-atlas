@@ -160,3 +160,7 @@ Claims about live cloud operations or measured production impact need separate
 evidence.
 
 MIT licensed; see [LICENSE](LICENSE).
+
+## Original project study
+
+See the [upstream project study](docs/upstream-study.md) for the original architecture, authorship, setup requirements and limitations. It describes a separate upstream reference, not this repository’s deployed application.
