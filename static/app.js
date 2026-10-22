@@ -8,7 +8,7 @@ function notice(text, error = false) { $('#status').textContent = text; $('#stat
 async function api(path, body) {
   const response = await fetch(path, body ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {});
   let data; try { data = await response.json(); } catch { throw Error('The service returned an unreadable response. Try again shortly.'); }
-  if (!response.ok) throw Error(typeof data.detail === 'string' ? data.detail : 'Check the selected exercise and try again.');
+  if (!response.ok) throw Error(typeof data.detail === 'string' ? data.detail : Array.isArray(data.detail) ? data.detail.slice(0, 2).map(item => item.msg).join(' ') : 'Check the submitted data and try again.');
   return data;
 }
 function renderChart() {
