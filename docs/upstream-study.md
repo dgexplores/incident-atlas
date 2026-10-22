@@ -53,7 +53,7 @@ Renaming and README editing do not establish implementation experience, benchmar
 
 ## Attribution and reuse
 
-Original source: [Signal0ne](https://github.com/SzymonSt/docker-signalone). Original authors: SzymonSt/docker-signalone contributors. Upstream history and notices are retained.
+Original source: [Signal0ne](https://github.com/SzymonSt/docker-signalone). Original authors: SzymonSt/docker-signalone contributors. Upstream authorship and applicable notices are recorded here; the upstream source is not included in this repository.
 
 The upstream README states MIT. Preserve upstream authorship and applicable notices; third-party components may have additional terms.
 
@@ -61,4 +61,4 @@ The upstream README states MIT. Preserve upstream authorship and applicable noti
 
 ## Relationship to this repository
 
-This document describes the original upstream reference, not the application deployed from this repository. Only study documentation is published here; the cloned upstream source stays local. Use the [repository README](../README.md) for the current application, live demo, tests and contribution details.
+This document describes the original upstream reference, not the application deployed from this repository. Only study documentation is published here; the upstream source is not included in this repository. Use the [repository README](../README.md) for the current application, live demo, tests and contribution details.
