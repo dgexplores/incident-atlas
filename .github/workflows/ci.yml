@@ -13,9 +13,12 @@ jobs:
       - run: ruff check atlas tests scripts
       - run: python -m pytest -q
       - run: python scripts/evaluate.py
+      - run: python scripts/evaluate_telemetry.py
       - name: Check synthetic evaluation gates
         run: python -c "import json; r=json.load(open('docs/evaluation.json')); assert r['false_positive_runs'] == 0; assert r['fault_runs_with_expected_incident_count'] == r['fault_runs']"
       - uses: actions/upload-artifact@v4
         with:
           name: synthetic-evaluation
-          path: docs/evaluation.json
+          path: |
+            docs/evaluation.json
+            docs/telemetry-evaluation.json

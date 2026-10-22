@@ -35,7 +35,8 @@ def test_real_shaped_data_and_arbitrary_service_hypothesis():
     lambda b: b["points"][0].update(metric="shell_command"),
 ])
 def test_invalid_streams_rejected(mutate):
-    payload = batch(); mutate(payload)
+    payload = batch()
+    mutate(payload)
     with pytest.raises(ValidationError):
         TelemetryBatch.model_validate(payload)
 
@@ -70,7 +71,8 @@ def test_telemetry_api_persistence_isolation_and_model_auth(tmp_path, monkeypatc
     with TestClient(app) as client:
         response = client.post("/api/telemetry", json=batch())
         assert response.status_code == 201, response.text
-        incident = response.json()["incidents"][0]; identity = incident["id"]
+        incident = response.json()["incidents"][0]
+        identity = incident["id"]
         assert client.get("/api/workspace").json()["source_kind"] == "user-supplied measurements"
         context = client.get(f"/api/incidents/{identity}/context").json()
         assert context["runbooks"][0]["id"] == "cpu-pressure"
