@@ -2,7 +2,7 @@
 
 Investigate container resource changes with measured telemetry, statistical detection, runbook context and optional model-assisted hypotheses.
 
-An original, AI-assisted Python application inspired by the operational problem addressed by [Signal0ne](https://devpost.com/software/signal0ne). No upstream source or awards are claimed. This v2 rebuild is local; earlier similarly named public demos do not verify this version.
+An original, AI-assisted Python application inspired by the operational problem addressed by [Signal0ne](https://devpost.com/software/signal0ne). No upstream source or awards are claimed. Independent v2 rebuild. The hosted default is offline; optional provider calls require configuration and operator authorization.
 
 ## Why this exists
 
@@ -80,3 +80,7 @@ Local Docker CLI → bounded JSON capture → validated import → frozen-baseli
 Be prepared to explain median versus mean, MAD scale floors, why baseline leakage matters, CPU core semantics, time-window grouping, session isolation, provider output validation and why correlation is not causality. Changes are real code rather than a rename of an upstream project; AI assistance does not establish personal understanding, which should be demonstrated by modifying and debugging the system.
 
 See [source study](docs/reference-analysis.md) for the original reference investigation. Existing [upstream-study notes](docs/upstream-study.md) describe the original, not this implementation.
+
+## Demo and interview walkthrough
+
+[Open the demo](https://dg-incident-atlas.onrender.com) · [Five-minute walkthrough](docs/DEMO.md). Free hosting can sleep; instance-local demo records may reset. External-provider and Jira modes are disabled unless configured and authorized.
